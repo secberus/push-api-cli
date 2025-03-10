@@ -17,20 +17,20 @@
 package cli
 
 import (
-  "bytes"
+	"bytes"
 	"context"
-  "encoding/json"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 
 	"github.com/spf13/cobra"
-  "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 
 	api "github.com/secberus/go-push-api/api/v1"
-  types "github.com/secberus/go-push-api/types/v1"
 	service "github.com/secberus/go-push-api/service/v1/push"
+	types "github.com/secberus/go-push-api/types/v1"
 )
 
 func New(client service.PushServiceClient) *cobra.Command {
@@ -66,25 +66,25 @@ func newListTablesCommand(client service.PushServiceClient) *cobra.Command {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      stream, err := client.ListTables(ctx, &api.ListTablesInput{})
-      if err != nil {
-        return err
-      }
+			stream, err := client.ListTables(ctx, &api.ListTablesInput{})
+			if err != nil {
+				return err
+			}
 
-      for {
-        output, err := stream.Recv()
-        if err == io.EOF {
-          break
-        }
-        if err != nil {
-          return err
-        }
+			for {
+				output, err := stream.Recv()
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					return err
+				}
 
-        table := output.GetTable()
-        if table != nil {
-          fmt.Fprintf(command.OutOrStdout(), "%s\n", table.GetName())
-        }
-      }
+				table := output.GetTable()
+				if table != nil {
+					fmt.Fprintf(command.OutOrStdout(), "%s\n", table.GetName())
+				}
+			}
 			return nil
 		},
 		SilenceUsage: true,
@@ -102,22 +102,22 @@ func newGetTableCommand(client service.PushServiceClient) *cobra.Command {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      response, err := client.GetTable(ctx, &api.GetTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			response, err := client.GetTable(ctx, &api.GetTableInput{
+				TableName: args[0],
+			})
+			if err != nil {
+				return err
+			}
 
-      table := response.GetTable()
-      if table != nil {
-        y, err := yaml.Marshal(table)
-        if err != nil {
-          return err
-        }
+			table := response.GetTable()
+			if table != nil {
+				y, err := yaml.Marshal(table)
+				if err != nil {
+					return err
+				}
 
-        fmt.Fprintf(command.OutOrStdout(), "%s\n", string(y))
-      }
+				fmt.Fprintf(command.OutOrStdout(), "%s\n", string(y))
+			}
 
 			return nil
 		},
@@ -135,30 +135,30 @@ func newCreateTableCommand(client service.PushServiceClient) *cobra.Command {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      input, err := readFileOrStdin(command)
-      if err != nil {
-        return err
-      }
+			input, err := readFileOrStdin(command)
+			if err != nil {
+				return err
+			}
 
-      var table types.Table
-      if err := decodeYAMLOrJSON(input, &table); err != nil {
-        return err
-      }
-      _, err = client.CreateTable(ctx, &api.CreateTableInput{
-        Table: &table,
-      })
-      if err != nil {
-        return err
-      }
+			var table types.Table
+			if err := decodeYAMLOrJSON(input, &table); err != nil {
+				return err
+			}
+			_, err = client.CreateTable(ctx, &api.CreateTableInput{
+				Table: &table,
+			})
+			if err != nil {
+				return err
+			}
 
-      fmt.Fprintf(command.OutOrStdout(), "created table %s\n", table.Name)
+			fmt.Fprintf(command.OutOrStdout(), "created table %s\n", table.Name)
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  cmd.Flags().StringP("file", "f", "", "Path to the file containing the table schema")
-  cmd.MarkFlagFilename("file")
-  return cmd
+	cmd.Flags().StringP("file", "f", "", "Path to the file containing the table schema")
+	cmd.MarkFlagFilename("file")
+	return cmd
 }
 
 func newDropTableCommand(client service.PushServiceClient) *cobra.Command {
@@ -171,23 +171,23 @@ func newDropTableCommand(client service.PushServiceClient) *cobra.Command {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      _, err := client.DropTable(ctx, &api.DropTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			_, err := client.DropTable(ctx, &api.DropTableInput{
+				TableName: args[0],
+			})
+			if err != nil {
+				return err
+			}
 
-      fmt.Fprintf(command.OutOrStdout(), "dropped table %s\n", args[0])
+			fmt.Fprintf(command.OutOrStdout(), "dropped table %s\n", args[0])
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  return cmd
+	return cmd
 }
 
 func newAlterTableCommand(client service.PushServiceClient) *cobra.Command {
-  return nil
+	return nil
 }
 
 func newTruncateTableCommand(client service.PushServiceClient) *cobra.Command {
@@ -200,35 +200,35 @@ func newTruncateTableCommand(client service.PushServiceClient) *cobra.Command {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      _, err := client.TruncateTable(ctx, &api.TruncateTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			_, err := client.TruncateTable(ctx, &api.TruncateTableInput{
+				TableName: args[0],
+			})
+			if err != nil {
+				return err
+			}
 
-      fmt.Fprintf(command.OutOrStdout(), "truncated table %s\n", args[0])
+			fmt.Fprintf(command.OutOrStdout(), "truncated table %s\n", args[0])
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  return cmd
+	return cmd
 }
 
 func newCreateIndexCommand(client service.PushServiceClient) *cobra.Command {
-  return nil
+	return nil
 }
 
 func newGetIndexCommand(client service.PushServiceClient) *cobra.Command {
-  return nil
+	return nil
 }
 
 func newDropIndexCommand(client service.PushServiceClient) *cobra.Command {
-  return nil
+	return nil
 }
 
 func newListIndexesCommand(client service.PushServiceClient) *cobra.Command {
-  return nil
+	return nil
 }
 
 func newUpsertRecordsCommand(client service.PushServiceClient) *cobra.Command {
@@ -237,29 +237,34 @@ func newUpsertRecordsCommand(client service.PushServiceClient) *cobra.Command {
 		Short: "upsert records",
 		Long:  "upsert records",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      response, err := client.GetTable(ctx, &api.GetTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			input, err := readFileOrStdin(command)
+			if err != nil {
+				return err
+			}
 
-      table := response.GetTable()
-      if table != nil {
-        fmt.Printf("%s\n", table.GetName())
-      }
+			var records []*types.Record
+			if err := decodeYAMLOrJSON(input, &records); err != nil {
+				return err
+			}
+			_, err = client.UpsertRecords(ctx, &api.UpsertRecordsInput{
+				Records: records,
+			})
+			if err != nil {
+				return err
+			}
 
+			fmt.Fprintf(command.OutOrStdout(), "upserted %d records", len(records))
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to upsert")
-  cmd.MarkFlagFilename("file")
-  return cmd
+	cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to upsert")
+	cmd.MarkFlagFilename("file")
+	return cmd
 }
 
 func newDeleteRecordsCommand(client service.PushServiceClient) *cobra.Command {
@@ -268,29 +273,34 @@ func newDeleteRecordsCommand(client service.PushServiceClient) *cobra.Command {
 		Short: "delete records",
 		Long:  "delete records",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      response, err := client.GetTable(ctx, &api.GetTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			input, err := readFileOrStdin(command)
+			if err != nil {
+				return err
+			}
 
-      table := response.GetTable()
-      if table != nil {
-        fmt.Printf("%s\n", table.GetName())
-      }
+			var records []*types.Record
+			if err := decodeYAMLOrJSON(input, &records); err != nil {
+				return err
+			}
+			_, err = client.DeleteRecords(ctx, &api.DeleteRecordsInput{
+				PrimaryKey: records,
+			})
+			if err != nil {
+				return err
+			}
 
+			fmt.Fprintf(command.OutOrStdout(), "deleted %d records", len(records))
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to delete")
-  cmd.MarkFlagFilename("file")
-  return cmd
+	cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to delete")
+	cmd.MarkFlagFilename("file")
+	return cmd
 }
 
 func newSyncDataCommand(client service.PushServiceClient) *cobra.Command {
@@ -299,49 +309,64 @@ func newSyncDataCommand(client service.PushServiceClient) *cobra.Command {
 		Short: "sync data",
 		Long:  "sync data",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
 
-      response, err := client.GetTable(ctx, &api.GetTableInput{
-        TableName: args[0],
-      })
-      if err != nil {
-        return err
-      }
+			input, err := readFileOrStdin(command)
+			if err != nil {
+				return err
+			}
 
-      table := response.GetTable()
-      if table != nil {
-        fmt.Printf("%s\n", table.GetName())
-      }
+			var data []*api.SyncDataInput
+			if err := decodeYAMLOrJSON(input, &data); err != nil {
+				return err
+			}
 
+			stream, err := client.SyncData(ctx)
+			if err != nil {
+				return err
+			}
+
+			recordCount := 0
+			for _, d := range data {
+				if err := stream.Send(d); err != nil {
+					return err
+				}
+				recordCount += len(d.Records)
+			}
+
+			if err := stream.CloseSend(); err != nil {
+				return err
+			}
+			fmt.Fprintf(command.OutOrStdout(), "synced %d records", recordCount)
 			return nil
 		},
 		SilenceUsage: true,
 	}
-  cmd.Flags().StringP("file", "f", "", "Path to the file containing the data to sync")
-  cmd.MarkFlagFilename("file")
-  return cmd
+	cmd.Flags().StringP("file", "f", "", "Path to the file containing the data to sync")
+	cmd.MarkFlagFilename("file")
+	return cmd
 }
 
 func readFileOrStdin(command *cobra.Command) (io.Reader, error) {
-  // set reader to stdin if no file is given
-  var inputReader io.Reader = command.InOrStdin()
+	// set reader to stdin if no file is given
+	var inputReader io.Reader = command.InOrStdin()
 
-  filename, err := command.Flags().GetString("file")
-  if err != nil {
-    return nil, fmt.Errorf("failed to parse argument: %v", err)
-  }
+	filename, err := command.Flags().GetString("file")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse argument: %v", err)
+	}
 
-  if filename != "" && filename != "-" {
-    file, err := os.Open(filename)
-    if err != nil {
-      return nil, fmt.Errorf("failed to open file: %v", err)
-    }
-    inputReader = file
-  }
+	if filename != "" && filename != "-" {
+		file, err := os.Open(filename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open file: %v", err)
+		}
+		inputReader = file
+	}
 
-  return inputReader, nil
+	return inputReader, nil
 }
 
 func decodeYAMLOrJSON(input io.Reader, v any) error {
@@ -364,4 +389,3 @@ func decodeYAMLOrJSON(input io.Reader, v any) error {
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	return decoder.Decode(v)
 }
-

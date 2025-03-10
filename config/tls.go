@@ -19,25 +19,25 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
-  "errors"
+	"errors"
 	"google.golang.org/grpc/credentials"
 )
 
 func Credentials(cfg *Config) (credentials.TransportCredentials, error) {
 
-  cert, err := tls.X509KeyPair(cfg.X509Certificate, cfg.RsaKey)
-  if err != nil {
-    return nil, err
-  }
+	cert, err := tls.X509KeyPair(cfg.X509Certificate, cfg.RsaKey)
+	if err != nil {
+		return nil, err
+	}
 
-  certPool := x509.NewCertPool()
-  if !certPool.AppendCertsFromPEM(cfg.CaBundle) {
-    return nil, errors.New("failed to parse CA certificates")
-  }
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(cfg.CaBundle) {
+		return nil, errors.New("failed to parse CA certificates")
+	}
 
-  tlsConfig := &tls.Config{
-    Certificates: []tls.Certificate{cert},
-    RootCAs:      certPool,
-  }
-  return credentials.NewTLS(tlsConfig), nil
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      certPool,
+	}
+	return credentials.NewTLS(tlsConfig), nil
 }

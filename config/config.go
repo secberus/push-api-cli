@@ -22,37 +22,37 @@ import (
 )
 
 const (
-  DefaultEndpoint = "push.secberus.io:7744"
-  DefaultCredentialsFile = "$HOME/.s6s/config"
-  CredentialsFileEnvVar = "S6S_CREDENTIALS_FILE"
+	DefaultEndpoint        = "push.secberus.io:7744"
+	DefaultCredentialsFile = "$HOME/.s6s/config"
+	CredentialsFileEnvVar  = "S6S_CREDENTIALS_FILE"
 )
 
 type Config struct {
-  Endpoint        string `json:"endpoint"`
-  X509Certificate []byte `json:"x509_certificate"`
-  RsaKey          []byte `json:"rsa_key"`
-  CaBundle        []byte `json:"ca_bundle"`
+	Endpoint        string `json:"endpoint"`
+	X509Certificate []byte `json:"x509_certificate"`
+	RsaKey          []byte `json:"rsa_key"`
+	CaBundle        []byte `json:"ca_bundle"`
 }
 
 func Load() (*Config, error) {
 
-  var credsFile string
-  credsFile, ok := os.LookupEnv(CredentialsFileEnvVar)
-  if !ok {
-    credsFile = DefaultCredentialsFile
-  }
+	var credsFile string
+	credsFile, ok := os.LookupEnv(CredentialsFileEnvVar)
+	if !ok {
+		credsFile = DefaultCredentialsFile
+	}
 
-  raw, err := os.ReadFile(os.ExpandEnv(credsFile))
-  if err != nil {
-    return nil, err
-  }
+	raw, err := os.ReadFile(os.ExpandEnv(credsFile))
+	if err != nil {
+		return nil, err
+	}
 
-  cfg := new(Config)
-  cfg.Endpoint = DefaultEndpoint
+	cfg := new(Config)
+	cfg.Endpoint = DefaultEndpoint
 
-  if err := json.Unmarshal(raw, &cfg); err != nil {
-    return nil, err
-  }
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return nil, err
+	}
 
-  return cfg, nil
+	return cfg, nil
 }

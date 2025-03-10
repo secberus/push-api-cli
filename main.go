@@ -17,39 +17,38 @@
 package main
 
 import (
-  "fmt"
-  "os"
+	"fmt"
+	"os"
 
-  "google.golang.org/grpc"
-  "github.com/secberus/push-api-cli/config"
-  "github.com/secberus/push-api-cli/cli"
-  service "github.com/secberus/go-push-api/service/v1/push"
+	service "github.com/secberus/go-push-api/service/v1/push"
+	"github.com/secberus/push-api-cli/cli"
+	"github.com/secberus/push-api-cli/config"
+	"google.golang.org/grpc"
 )
-
 
 func main() {
 
-  cfg, err := config.Load()
-  if err != nil {
-    handleError(err)
-  }
+	cfg, err := config.Load()
+	if err != nil {
+		handleError(err)
+	}
 
-  tlsCreds, err := config.Credentials(cfg)
-  if err != nil {
-    handleError(err)
-  }
+	tlsCreds, err := config.Credentials(cfg)
+	if err != nil {
+		handleError(err)
+	}
 
-  conn, err := grpc.NewClient(cfg.Endpoint, grpc.WithTransportCredentials(tlsCreds))
-  if err != nil {
-    handleError(err)
-  }
+	conn, err := grpc.NewClient(cfg.Endpoint, grpc.WithTransportCredentials(tlsCreds))
+	if err != nil {
+		handleError(err)
+	}
 
-  client := service.NewPushServiceClient(conn)
+	client := service.NewPushServiceClient(conn)
 	cmd := cli.New(client)
 	cmd.Execute()
 }
 
 func handleError(err error) {
-  fmt.Printf("%s\n", err)
-  os.Exit(1)
+	fmt.Printf("%s\n", err)
+	os.Exit(1)
 }
