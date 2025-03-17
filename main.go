@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"os"
 
+	"google.golang.org/grpc"
+
 	service "github.com/secberus/go-push-api/service/v1/push"
+
 	"github.com/secberus/push-api-cli/cli"
 	"github.com/secberus/push-api-cli/config"
-	"google.golang.org/grpc"
 )
 
 func main() {

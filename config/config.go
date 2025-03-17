@@ -30,7 +30,7 @@ const (
 type Config struct {
 	Endpoint        string `json:"endpoint"`
 	X509Certificate []byte `json:"x509_certificate"`
-	RsaKey          []byte `json:"rsa_key"`
+	PrivateKey      []byte `json:"private_key"`
 	CaBundle        []byte `json:"ca_bundle"`
 }
 
