@@ -1,9 +1,9 @@
 module github.com/secberus/push-api-cli
 
-go 1.22.2
+go 1.24.1
 
 require (
-	github.com/secberus/go-push-api v0.0.0-20250224173800-aad67da679bb
+	github.com/secberus/go-push-api v0.0.0-20250317013424-04504fab0d6d
 	github.com/spf13/cobra v1.9.1
 	google.golang.org/grpc v1.70.0
 	gopkg.in/yaml.v3 v3.0.1

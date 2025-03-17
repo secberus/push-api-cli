@@ -20,12 +20,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+
 	"google.golang.org/grpc/credentials"
 )
 
 func Credentials(cfg *Config) (credentials.TransportCredentials, error) {
 
-	cert, err := tls.X509KeyPair(cfg.X509Certificate, cfg.RsaKey)
+	cert, err := tls.X509KeyPair(cfg.X509Certificate, cfg.PrivateKey)
 	if err != nil {
 		return nil, err
 	}
