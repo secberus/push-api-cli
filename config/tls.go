@@ -26,13 +26,13 @@ import (
 
 func Credentials(cfg *Config) (credentials.TransportCredentials, error) {
 
-	cert, err := tls.X509KeyPair(cfg.X509Certificate, cfg.PrivateKey)
+	cert, err := tls.X509KeyPair([]byte(cfg.X509Certificate), []byte(cfg.PrivateKey))
 	if err != nil {
 		return nil, err
 	}
 
 	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(cfg.CaBundle) {
+	if !certPool.AppendCertsFromPEM([]byte(cfg.CaBundle)) {
 		return nil, errors.New("failed to parse CA certificates")
 	}
 

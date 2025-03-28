@@ -32,17 +32,17 @@ func main() {
 
 	cfg, err := config.Load()
 	if err != nil {
-		handleError(err)
+		fatal(fmt.Errorf("failed to load configuration: %w", err))
 	}
 
 	tlsCreds, err := config.Credentials(cfg)
 	if err != nil {
-		handleError(err)
+		fatal(fmt.Errorf("failed to load client credentials: %w", err))
 	}
 
 	conn, err := grpc.NewClient(cfg.Endpoint, grpc.WithTransportCredentials(tlsCreds))
 	if err != nil {
-		handleError(err)
+		fatal(fmt.Errorf("failed to create client: %w", err))
 	}
 
 	client := service.NewPushServiceClient(conn)
@@ -50,7 +50,7 @@ func main() {
 	cmd.Execute()
 }
 
-func handleError(err error) {
+func fatal(err error) {
 	fmt.Printf("%s\n", err)
 	os.Exit(1)
 }

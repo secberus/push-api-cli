@@ -29,9 +29,9 @@ const (
 
 type Config struct {
 	Endpoint        string `json:"endpoint"`
-	X509Certificate []byte `json:"x509_certificate"`
-	PrivateKey      []byte `json:"private_key"`
-	CaBundle        []byte `json:"ca_bundle"`
+	X509Certificate string `json:"x509_certificate"`
+	PrivateKey      string `json:"private_key"`
+	CaBundle        string `json:"ca_bundle"`
 }
 
 func Load() (*Config, error) {
