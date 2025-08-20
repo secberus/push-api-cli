@@ -1,0 +1,16 @@
+[
+  {
+    "table_name": "test_table",
+    "columns": [
+      {
+        "name": "text_column",
+        "data_type": {
+          "text": {
+            "value": "this is record 1"
+          }
+        }
+      }
+    ]
+  }
+]
+
