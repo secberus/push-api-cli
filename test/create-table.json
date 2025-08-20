@@ -1,0 +1,28 @@
+{
+  "name": "test_table",
+  "sync_type": "truncate",
+  "columns": [
+    {
+      "name": "text_column",
+      "primary_key": true,
+      "data_type": {
+        "text": {}
+      }
+    },
+    {
+      "name": "boolean_column",
+      "data_type": {
+        "boolean": {
+          "default": true
+        }
+      }
+    },
+    {
+      "name": "integer_column",
+      "nillable": true,
+      "data_type": {
+        "integer": {}
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "table_name": "test_table",
+    "columns": [
+      {
+        "name": "text_column",
+        "data_type": {
+          "text": {
+            "value": "this is record 1"
+          }
+        }
+      },
+      {
+        "name": "boolean_column",
+        "data_type": {
+          "boolean": {
+            "value": false
+          }
+        }
+      },
+      {
+        "name": "integer_column",
+        "data_type": {
+          "integer": {
+            "value": 23523
+          }
+        }
+      }
+    ]
+  },
+  {
+    "table_name": "test_table",
+    "columns": [
+      {
+        "name": "text_column",
+        "data_type": {
+          "text": {
+            "value": "this is record 2"
+          }
+        }
+      },
+      {
+        "name": "boolean_column",
+        "data_type": {
+          "boolean": {
+            "value": false
+          }
+        }
+      },
+      {
+        "name": "integer_column",
+        "data_type": {
+          "integer": {
+            "value": 45645
+          }
+        }
+      }
+    ]
+  }
+]

@@ -17,20 +17,49 @@
 package cli
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/secberus/push-api-cli/model"
+
 	api "github.com/secberus/go-push-api/api/v1"
 	service "github.com/secberus/go-push-api/service/v1/push"
-	types "github.com/secberus/go-push-api/types/v1"
+	v1 "github.com/secberus/go-push-api/types/v1"
+)
+
+const (
+	FormatUnknown = 0
+	FormatJSON    = 1
+	FormatYAML    = 2
+	FormatCSV     = 3
+)
+
+var (
+	UseJsonFormat = false
+	UseYamlFormat = false
+	UseCsvFormat  = false
+)
+
+type (
+	csvSyncDataRow struct {
+	}
+
+	csvUpsertRecordsRow struct {
+	}
+
+	csvDeleteRecordsRow struct {
+		TableName  string
+		ColumnName string
+		PrimaryKey bool
+	}
 )
 
 func New(client service.PushServiceClient) *cobra.Command {
@@ -127,8 +156,10 @@ func newGetTableCommand(client service.PushServiceClient) *cobra.Command {
 }
 
 func newCreateTableCommand(client service.PushServiceClient) *cobra.Command {
+	format := FormatJSON
+
 	cmd := &cobra.Command{
-		Use:   "create-table [ -f <filename> ]",
+		Use:   "create-table [ --yaml | --json | --csv ] [ -f <filename> ]",
 		Short: "create table",
 		Long:  "create table",
 		RunE: func(command *cobra.Command, args []string) error {
@@ -137,18 +168,32 @@ func newCreateTableCommand(client service.PushServiceClient) *cobra.Command {
 
 			input, err := readFileOrStdin(command)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to read input: %w", err)
 			}
 
-			var table types.Table
-			if err := decodeYAMLOrJSON(input, &table); err != nil {
-				return err
+			switch {
+			case UseCsvFormat:
+				format = FormatCSV
+			case UseYamlFormat:
+				format = FormatYAML
+			default:
+				format = FormatJSON
 			}
+
+			var table model.Table
+			if err := decodeInput(input, format, &table); err != nil {
+				return fmt.Errorf("failed to decode input: %w", err)
+			}
+
 			_, err = client.CreateTable(ctx, &api.CreateTableInput{
-				Table: &table,
+				Table: &v1.Table{
+					Name:     table.Name,
+					SyncType: resolveSyncType(table.SyncType),
+					Columns:  encodeColumns(table.Columns),
+				},
 			})
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to create table: %w", err)
 			}
 
 			fmt.Fprintf(command.OutOrStdout(), "created table %s\n", table.Name)
@@ -156,7 +201,10 @@ func newCreateTableCommand(client service.PushServiceClient) *cobra.Command {
 		},
 		SilenceUsage: true,
 	}
-	cmd.Flags().StringP("file", "f", "", "Path to the file containing the table schema")
+	cmd.Flags().StringP("file", "f", "", "Path to the file containing the table schema.")
+	cmd.Flags().BoolVar(&UseJsonFormat, "json", false, "Parse the input as JSON.  This is the default if no format is specified.")
+	cmd.Flags().BoolVar(&UseYamlFormat, "yaml", false, "Parse the input as YAML.")
+	cmd.Flags().BoolVar(&UseCsvFormat, "csv", false, "Parse the input as CSV.")
 	cmd.MarkFlagFilename("file")
 	return cmd
 }
@@ -232,11 +280,12 @@ func newListIndexesCommand(client service.PushServiceClient) *cobra.Command {
 }
 
 func newUpsertRecordsCommand(client service.PushServiceClient) *cobra.Command {
+	format := FormatJSON
+
 	cmd := &cobra.Command{
-		Use:   "upsert-records -f <filename> | <input>",
+		Use:   "upsert-records [ --json | --yaml | --csv ] -f <filename> | <input>",
 		Short: "upsert records",
 		Long:  "upsert records",
-		Args:  cobra.ExactArgs(1),
 		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
@@ -246,12 +295,21 @@ func newUpsertRecordsCommand(client service.PushServiceClient) *cobra.Command {
 				return err
 			}
 
-			var records []*types.Record
-			if err := decodeYAMLOrJSON(input, &records); err != nil {
+			switch {
+			case UseCsvFormat:
+				format = FormatCSV
+			case UseYamlFormat:
+				format = FormatYAML
+			default:
+				format = FormatJSON
+			}
+
+			var records []model.Record
+			if err := decodeInput(input, format, &records); err != nil {
 				return err
 			}
 			_, err = client.UpsertRecords(ctx, &api.UpsertRecordsInput{
-				Records: records,
+				Records: encodeRecords(records),
 			})
 			if err != nil {
 				return err
@@ -263,16 +321,20 @@ func newUpsertRecordsCommand(client service.PushServiceClient) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to upsert")
+	cmd.Flags().BoolVar(&UseJsonFormat, "json", false, "Parse the input as JSON.  This is the default if no format is specified.")
+	cmd.Flags().BoolVar(&UseYamlFormat, "yaml", false, "Parse the input as YAML.")
+	cmd.Flags().BoolVar(&UseCsvFormat, "csv", false, "Parse the input as CSV.")
 	cmd.MarkFlagFilename("file")
 	return cmd
 }
 
 func newDeleteRecordsCommand(client service.PushServiceClient) *cobra.Command {
+	format := FormatJSON
+
 	cmd := &cobra.Command{
-		Use:   "delete-records -f <filename> | <input>",
+		Use:   "delete-records [ --json | --yaml | --csv ] -f <filename> | <input>",
 		Short: "delete records",
 		Long:  "delete records",
-		Args:  cobra.ExactArgs(1),
 		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
@@ -282,12 +344,21 @@ func newDeleteRecordsCommand(client service.PushServiceClient) *cobra.Command {
 				return err
 			}
 
-			var records []*types.Record
-			if err := decodeYAMLOrJSON(input, &records); err != nil {
+			switch {
+			case UseCsvFormat:
+				format = FormatCSV
+			case UseYamlFormat:
+				format = FormatYAML
+			default:
+				format = FormatJSON
+			}
+
+			var records []model.Record
+			if err := decodeInput(input, format, &records); err != nil {
 				return err
 			}
 			_, err = client.DeleteRecords(ctx, &api.DeleteRecordsInput{
-				PrimaryKey: records,
+				PrimaryKey: encodeRecords(records),
 			})
 			if err != nil {
 				return err
@@ -299,16 +370,20 @@ func newDeleteRecordsCommand(client service.PushServiceClient) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.Flags().StringP("file", "f", "", "Path to the file containing the records to delete")
+	cmd.Flags().BoolVar(&UseJsonFormat, "json", false, "Parse the input as JSON.  This is the default if no format is specified.")
+	cmd.Flags().BoolVar(&UseYamlFormat, "yaml", false, "Parse the input as YAML.")
+	cmd.Flags().BoolVar(&UseCsvFormat, "csv", false, "Parse the input as CSV.")
 	cmd.MarkFlagFilename("file")
 	return cmd
 }
 
 func newSyncDataCommand(client service.PushServiceClient) *cobra.Command {
+	format := FormatJSON
+
 	cmd := &cobra.Command{
-		Use:   "sync-data -f <filename> | <input>",
+		Use:   "sync-data [ --json | --yaml | --csv ] -f <filename> | <input>",
 		Short: "sync data",
 		Long:  "sync data",
-		Args:  cobra.ExactArgs(1),
 		RunE: func(command *cobra.Command, args []string) error {
 			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer cancel()
@@ -318,8 +393,17 @@ func newSyncDataCommand(client service.PushServiceClient) *cobra.Command {
 				return err
 			}
 
+			switch {
+			case UseCsvFormat:
+				format = FormatCSV
+			case UseYamlFormat:
+				format = FormatYAML
+			default:
+				format = FormatJSON
+			}
+
 			var data []*api.SyncDataInput
-			if err := decodeYAMLOrJSON(input, &data); err != nil {
+			if err := decodeInput(input, format, &data); err != nil {
 				return err
 			}
 
@@ -345,6 +429,9 @@ func newSyncDataCommand(client service.PushServiceClient) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.Flags().StringP("file", "f", "", "Path to the file containing the data to sync")
+	cmd.Flags().BoolVar(&UseJsonFormat, "json", false, "Parse the input as JSON.  This is the default if no format is specified.")
+	cmd.Flags().BoolVar(&UseYamlFormat, "yaml", false, "Parse the input as YAML.")
+	cmd.Flags().BoolVar(&UseCsvFormat, "csv", false, "Parse the input as CSV.")
 	cmd.MarkFlagFilename("file")
 	return cmd
 }
@@ -369,23 +456,103 @@ func readFileOrStdin(command *cobra.Command) (io.Reader, error) {
 	return inputReader, nil
 }
 
-func decodeYAMLOrJSON(input io.Reader, v any) error {
-	// reads the entire content from the reader into a buffer.  this'll need to change eventually to be able to handle larger inputs.
-	buf := new(bytes.Buffer)
-	_, err := io.Copy(buf, input)
-	if err != nil {
-		return fmt.Errorf("error reading input: %v", err)
-	}
+// detects the format of the input from the io.,Reader and attempts to decode into the v paramter.
+func decodeInput(r io.Reader, format int, v any) error {
 
-	data := buf.Bytes()
-	// check if the content starts with JSON
-	if json.Valid(data) {
-		// If valid JSON, decode it
-		decoder := json.NewDecoder(bytes.NewReader(data))
-		return decoder.Decode(v)
+	switch format {
+	case FormatJSON:
+		if err := decodeJSON(r, v); err != nil {
+			return fmt.Errorf("failed to decode as JSON: %w", err)
+		}
+	case FormatYAML:
+		if err := decodeYAML(r, v); err != nil {
+			return fmt.Errorf("failed to decode as YAML: %w", err)
+		}
+	case FormatCSV:
+		if err := decodeCSV(r, v); err != nil {
+			return fmt.Errorf("failed to decode as CSV: %w", err)
+		}
+	default:
+		return fmt.Errorf("cannot decode unknown input format")
 	}
+	return nil
+}
 
-	// If it's not valid JSON, try to decode as YAML
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
+func decodeJSON(input io.Reader, v any) error {
+	decoder := json.NewDecoder(input)
 	return decoder.Decode(v)
+}
+
+func decodeYAML(input io.Reader, v any) error {
+	decoder := yaml.NewDecoder(input)
+	return decoder.Decode(v)
+}
+
+func decodeCSV(input io.Reader, v any) error {
+	return nil
+}
+
+func resolveSyncType(s string) v1.TableSyncType {
+
+	if strings.Contains(strings.ToLower(s), "truncate") {
+		return v1.TableSyncType_TABLE_SYNC_TYPE_TRUNCATE
+	} else if strings.Contains(strings.ToLower(s), "append") {
+		return v1.TableSyncType_TABLE_SYNC_TYPE_APPEND
+	}
+
+	return v1.TableSyncType_TABLE_SYNC_TYPE_UNSPECIFIED
+}
+
+func encodeRecords(r []model.Record) []*v1.Record {
+
+	records := make([]*v1.Record, len(r))
+	for x, rec := range r {
+		records[x] = &v1.Record{
+			TableName: rec.TableName,
+			Columns:   encodeColumns(rec.Columns),
+		}
+	}
+	return records
+}
+
+func encodeColumns(c []model.Column) []*v1.Column {
+
+	cols := make([]*v1.Column, len(c))
+	for x, col := range c {
+
+		dt := &v1.DataType{}
+
+		switch {
+		case col.DataType.Boolean != nil:
+			dt.Union = &v1.DataType_Boolean{
+				Boolean: &v1.Boolean{
+					Value:   col.DataType.Boolean.Value,
+					Default: col.DataType.Boolean.Default,
+				},
+			}
+		case col.DataType.Integer != nil:
+			dt.Union = &v1.DataType_Integer{
+				Integer: &v1.Integer{
+					Value:   col.DataType.Integer.Value,
+					Default: col.DataType.Integer.Default,
+				},
+			}
+		case col.DataType.Text != nil:
+			dt.Union = &v1.DataType_Text{
+				Text: &v1.Text{
+					Value:   col.DataType.Text.Value,
+					Default: col.DataType.Text.Default,
+				},
+			}
+		}
+
+		cols[x] = &v1.Column{
+			Name:       col.Name,
+			Nillable:   col.Nillable,
+			Unique:     col.Unique,
+			PrimaryKey: col.PrimaryKey,
+			DataType:   dt,
+		}
+	}
+	return cols
 }
