@@ -544,6 +544,75 @@ func encodeColumns(c []model.Column) []*v1.Column {
 					Default: col.DataType.Text.Default,
 				},
 			}
+		case col.DataType.Smallint != nil:
+			dt.Union = &v1.DataType_Smallint{
+				Smallint: &v1.Smallint{
+					Value:   col.DataType.Smallint.Value,
+					Default: col.DataType.Smallint.Default,
+				},
+			}
+		case col.DataType.Bigint != nil:
+			dt.Union = &v1.DataType_Bigint{
+				Bigint: &v1.Bigint{
+					Value:   col.DataType.Bigint.Value,
+					Default: col.DataType.Bigint.Default,
+				},
+			}
+		case col.DataType.Real != nil:
+			dt.Union = &v1.DataType_Real{
+				Real: &v1.Real{
+					Value:   col.DataType.Real.Value,
+					Default: col.DataType.Real.Default,
+				},
+			}
+		case col.DataType.Double != nil:
+			dt.Union = &v1.DataType_Double{
+				Double: &v1.Double{
+					Value:   col.DataType.Double.Value,
+					Default: col.DataType.Double.Default,
+				},
+			}
+		case col.DataType.Bytea != nil:
+			dt.Union = &v1.DataType_Bytea{
+				Bytea: &v1.Bytea{
+					Value: col.DataType.Bytea.Value,
+				},
+			}
+		case col.DataType.Timestamptz != nil:
+			dt.Union = &v1.DataType_Timestamptz{
+				Timestamptz: &v1.Timestamptz{
+					Value:   col.DataType.Timestamptz.Value,
+					Default: col.DataType.Timestamptz.Default,
+				},
+			}
+		case col.DataType.Jsonb != nil:
+			dt.Union = &v1.DataType_Jsonb{
+				Jsonb: &v1.Jsonb{
+					Value:   col.DataType.Jsonb.Value,
+					Default: col.DataType.Jsonb.Default,
+				},
+			}
+		case col.DataType.Inet != nil:
+			dt.Union = &v1.DataType_Inet{
+				Inet: &v1.Inet{
+					Value:   col.DataType.Inet.Value,
+					Default: col.DataType.Inet.Default,
+				},
+			}
+		case col.DataType.Cidr != nil:
+			dt.Union = &v1.DataType_Cidr{
+				Cidr: &v1.Cidr{
+					Value:   col.DataType.Cidr.Value,
+					Default: col.DataType.Cidr.Default,
+				},
+			}
+		case col.DataType.Macaddr != nil:
+			dt.Union = &v1.DataType_Macaddr{
+				Macaddr: &v1.Macaddr{
+					Value:   col.DataType.Macaddr.Value,
+					Default: col.DataType.Macaddr.Default,
+				},
+			}
 		}
 
 		cols[x] = &v1.Column{
